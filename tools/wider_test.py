@@ -6,6 +6,7 @@ from __future__ import print_function
 
 import os
 import torch
+import sys
 import argparse
 import torch.nn as nn
 import torch.utils.data as data
@@ -19,15 +20,18 @@ import numpy as np
 from PIL import Image
 import scipy.io as sio
 
+curPath = os.path.abspath((os.path).dirname(__file__))
+rootPath = os.path.split(curPath)[0]
+sys.path.append(rootPath)
+
 from data.config import cfg
-from pyramidbox import build_net
+from models.pyramidbox import build_net
 from torch.autograd import Variable
 from utils.augmentations import to_chw_bgr
 
-
 parser = argparse.ArgumentParser(description='pyramidbox evaluatuon wider')
 parser.add_argument('--model', type=str,
-                    default='weights/pyramidbox.pth', help='trained model')
+                    default='../weights/pyramidbox.pth', help='trained model')
 parser.add_argument('--thresh', default=0.05, type=float,
                     help='Final confidence threshold')
 args = parser.parse_args()
@@ -161,17 +165,17 @@ def get_data():
     subset = 'val'
     if subset is 'val':
         wider_face = sio.loadmat(
-            './eval_tools/wider_face_val.mat')
+            '/home/dataset/wider_face/wider_face_split/wider_face_val.mat')
     else:
         wider_face = sio.loadmat(
-            './eval_tools/wider_face_test.mat')
+            '/home/dataset/wider_face/wider_face_split/wider_face_test.mat')
     event_list = wider_face['event_list']
     file_list = wider_face['file_list']
     del wider_face
 
     imgs_path = os.path.join(
         cfg.FACE.WIDER_DIR, 'WIDER_{}'.format(subset), 'images')
-    save_path = 'eval_tools/pyramidbox_{}'.format(subset)
+    save_path = '../eval/pyramidbox_{}'.format(subset)
 
     return event_list, file_list, imgs_path, save_path
 
@@ -179,7 +183,7 @@ if __name__ == '__main__':
     event_list, file_list, imgs_path, save_path = get_data()
     cfg.USE_NMS = False
     net = build_net('test', cfg.NUM_CLASSES)
-    net.load_state_dict(torch.load(args.model))
+    net.load_state_dict(torch.load(args.model)['state_dict'])
     net.eval()
 
     if use_cuda:
@@ -190,13 +194,16 @@ if __name__ == '__main__':
 
     for index, event in enumerate(event_list):
         filelist = file_list[index][0]
-        path = os.path.join(save_path, event[0][0].encode('utf-8'))
+        print(type(save_path),type(event[0][0]),type(event[0][0].encode('utf-8')))
+        path = os.path.join(save_path,str(eval(event[0][0])))
+        print(path)
         if not os.path.exists(path):
             os.makedirs(path)
 
         for num, file in enumerate(filelist):
-            im_name = file[0][0].encode('utf-8')
-            in_file = os.path.join(imgs_path, event[0][0], im_name[:] + '.jpg')
+            im_name = eval(file[0][0])
+            print(im_name)
+            in_file = os.path.join(imgs_path, event[0][0],str(im_name[:]) + '.jpg')
             #img = cv2.imread(in_file)
             img = Image.open(in_file)
             if img.mode == 'L':

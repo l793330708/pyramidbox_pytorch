@@ -17,14 +17,14 @@ class Detect(Function):
     confidence score and locations.
     """
 
-    def __init__(self, cfg):
-        self.num_classes = cfg.NUM_CLASSES
-        self.top_k = cfg.TOP_K
-        self.nms_thresh = cfg.NMS_THRESH
-        self.conf_thresh = cfg.CONF_THRESH
-        self.variance = cfg.VARIANCE
+    #def __init__(self, cfg):
+    #    self.num_classes = cfg.NUM_CLASSES
+    #    self.top_k = cfg.TOP_K
+    #    self.nms_thresh = cfg.NMS_THRESH
+    #    self.conf_thresh = cfg.CONF_THRESH
+    #    self.variance = cfg.VARIANCE
 
-    def forward(self, loc_data, conf_data, prior_data):
+    def forward(self, cfg, loc_data, conf_data, prior_data):
         """
         Args:
             loc_data: (tensor) Loc preds from loc layers
@@ -34,6 +34,11 @@ class Detect(Function):
             prior_data: (tensor) Prior boxes and variances from priorbox layers
                 Shape: [1,num_priors,4] 
         """
+        self.num_classes = cfg.NUM_CLASSES
+        self.top_k = cfg.TOP_K
+        self.nms_thresh = cfg.NMS_THRESH
+        self.conf_thresh = cfg.CONF_THRESH
+        self.variance = cfg.VARIANCE
         num = loc_data.size(0)
         num_priors = prior_data.size(0)
 

@@ -21,6 +21,7 @@ from data.widerface import WIDERDetection, detection_collate
 from layers import MultiBoxLoss
 from layers import PriorBox
 from models.pyramidbox import build_net
+from apex import amp
 
 
 parser = argparse.ArgumentParser(
@@ -96,16 +97,18 @@ def main():
         print('Load base network....')
         model.vgg.load_state_dict(vgg_weights)
 
-    # for multi gpu
-    if args.distributed:
-        model = torch.nn.parallel.DistributedDataParallel(model)
 
     model = model.cuda()
     # optimizer and loss function  
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum,
                         weight_decay=args.weight_decay)
+    model, optimizer = amp.initialize(model, optimizer, opt_level="O1")
     criterion1 = MultiBoxLoss(cfg, True)
     criterion2 = MultiBoxLoss(cfg, True, use_head_loss=True)
+
+    # for multi gpu
+    if args.distributed:
+        model = torch.nn.parallel.DistributedDataParallel(model)
 
     # optionally resume from a checkpoint
     if args.resume:
@@ -219,7 +222,9 @@ def train(train_loader, model, priors, criterion1, criterion2, optimizer, epoch)
 
         # compute gradient and do SGD step
         optimizer.zero_grad()
-        loss.backward()
+        #loss.backward()
+        with amp.scale_loss(loss, optimizer) as scaled_loss:
+            scaled_loss.backward()
         optimizer.step()
         torch.cuda.synchronize()
         # measure elapsed time

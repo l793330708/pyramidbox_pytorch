@@ -18,7 +18,7 @@ import numpy as np
 from PIL import Image
 
 from data.config import cfg
-from pyramidbox import build_net
+from models.pyramidbox import build_net
 from layers import PriorBox
 from utils.augmentations import to_chw_bgr
 
@@ -27,7 +27,7 @@ parser.add_argument('--save_dir',
                     type=str, default='tmp/',
                     help='Directory for detect result')
 parser.add_argument('--model',
-                    type=str, default='weights/pyramidbox.pth',
+                    type=str, default='weights/pyramidbox_0.pth',
                     help='trained model')
 parser.add_argument('--thresh',
                     default=0.4, type=float,
@@ -104,7 +104,7 @@ if __name__ == '__main__':
         priors = priors.cuda()
         
     net = build_net('test', cfg.NUM_CLASSES)
-    net.load_state_dict(torch.load(args.model))
+    net.load_state_dict(torch.load(args.model)['state_dict'])
     net.eval()
 
     if use_cuda:
@@ -112,7 +112,7 @@ if __name__ == '__main__':
         cudnn.benckmark = True
 
    
-    img_path = './img'
+    img_path = 'data/img'
     img_list = [os.path.join(img_path, x)
                 for x in os.listdir(img_path) if x.endswith('jpg')]
     for path in img_list:
